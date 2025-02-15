@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Unique Transform Effects</title>
+    <style>
+        /* General Button Styling */
+        .button {
+            font-family: "Damion", cursive;
+            cursor: pointer;
+            padding: 1em;
+            font-size: 3em; /* Change this value to adjust the font size */
+            width: 8em;        /* Fixed width */
+            height: 5em;        /* Fixed height */
+            /* Remove aspect-ratio */
+            color: white;
+            background: #212121;
+            border-radius: 0.5em;
+            outline: 0.1em solid #353535;
+            border: 0;
+            box-shadow: 0 0 1em 1em rgba(0, 0, 0, 0.1);
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            overflow: hidden;  /* Prevents text overflow from affecting button size */
+        }
+
+
+        /* Button Container */
+        .button-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Positioning Buttons Next to Each Other */
+        .button:nth-child(1) { top: 200px; left: 25%; }
+        .button:nth-child(2) { top: 200px; left: 47%; }
+        .button:nth-child(3) { top: 200px; left: 69%; }
+        .button:nth-child(4) { top: 400px; left: 35%; }
+        .button:nth-child(5) { top: 400px; left: 59%; }
+
+        /* Unique Zoom & Center Effects */
+        .button:nth-child(1).zoomed { transform: translate(450%, 700%) scale(2) ; }
+        .button:nth-child(2).zoomed { transform: translate( 200%, 700%) scale(2) ;}
+        .button:nth-child(3).zoomed { transform: translate(-40%, 700%) scale(2) ; }
+        .button:nth-child(4).zoomed { transform: translate(-330%, 700%) scale(2) ; }
+        .button:nth-child(5).zoomed { transform: translate(-550%, 700%) scale(2) ; }
+
+        /* Fade out other buttons */
+        .faded {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="button-container">
+        <button class="button" onclick="zoomButton(this)">PAGKAON</button>
+        <button class="button" onclick="zoomButton(this)">HEYOGRAPIYA</button>
+        <button class="button" onclick="zoomButton(this)">TEKNOLOHIYA</button>
+        <button class="button" onclick="zoomButton(this)">AWTO</button>
+        <button class="button" onclick="zoomButton(this)">SIYENSYA</button>
+    </div>
+
+    <script>
+        function zoomButton(clickedButton) {
+            let buttons = document.querySelectorAll(".button");
+
+            // Remove zoom from any other button & fade them
+            buttons.forEach(btn => {
+                btn.classList.remove("zoomed");
+                btn.classList.add("faded"); // Fade out other buttons
+            });
+
+            // Apply zoom and center movement
+            setTimeout(() => {
+                clickedButton.classList.add("zoomed");
+                clickedButton.classList.remove("faded"); // Ensure the clicked button stays visible
+            }, 100);
+        }
+
+        // Reset when clicking outside
+        document.addEventListener("click", function(event) {
+            if (!event.target.classList.contains("button")) {
+                document.querySelectorAll(".button").forEach(btn => {
+                    btn.classList.remove("zoomed", "faded");
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Timed Flip Buttons</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: "Damion", cursive;
+        }
+
+        #timer {
+            position: fixed;
+            top: 5px;
+            left: 1300px;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        #csvWord {
+            font-size: 100px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+
+        .flip-button-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 columns */
+            grid-template-rows: auto;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+
+            #flipButton1 { grid-column: 1; grid-row: 1; }
+            #flipButton2 { grid-column: 2; grid-row: 1; }
+            #flipButton3 { grid-column: span 2; grid-row: 2; justify-self: center; }
+            #flipButton4 { grid-column: 1; grid-row: 3; }
+            #flipButton5 { grid-column: 2; grid-row: 3; }
+
+
+        .flip-button {
+            top: 30px;
+            width: 870px;
+            height: 230px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease-in-out;
+            cursor: pointer;
+            border-radius: 20px;
+            margin-left: 30px;
+            display: inline-block;
+        }
+
+        .flip-button .front,
+        .flip-button .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            backface-visibility: hidden;
+            font-size: 100px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            font-family: "Damion", cursive;
+        }
+
+        .flip-button .front {
+            background: linear-gradient(135deg, #728086, #2b3133);
+        }
+
+        .flip-button .back {
+            background: linear-gradient(135deg, #728086, #2b3133);
+            border: 5px solid green;
+            transform: rotateY(180deg);
+        }
+
+        .flip-button.flipped {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body>
+    <label for="timeInput">Set Timer (mm:ss:ms): </label>
+    <input type="text" id="timeInput" placeholder="00:00:00">
+    <button onclick="setCustomTime()">Set Time</button>
+    
+    <div id="timer">Time: 00:00:00</div>
+
+    <div id="csvWord"></div>
+
+    <div class="flip-button-container" id="flipButtonsContainer"></div>
+
+    <script>
+    let minutes = 0;
+    let seconds = 0;
+    let milliseconds = 0;
+    let timerInterval;
+    let timerStarted = false;
+    let timeUp = false;
+    let timeSet = false; // Flag to check if time has been set
+    const timerDisplay = document.getElementById("timer");
+    const flipButtonsContainer = document.getElementById('flipButtonsContainer');
+
+    async function loadCSV() {
+        const response = await fetch('gimme5_sample_bisaya.csv');
+        const data = await response.text();
+        const rows = data.split('\n').map(row => row.split(','));
+        
+        const csvWord = rows[1][2]; 
+        document.getElementById('csvWord').textContent = `${csvWord}`;
+
+        const answers = [];
+        for (let col = 3; col < 8; col++) {
+            answers.push(rows[1][col]);
+        }
+
+        const buttonIds = ['flipButton1', 'flipButton2', 'flipButton3', 'flipButton4', 'flipButton5'];
+        buttonIds.forEach((id, index) => {
+            const flipButton = document.createElement('div');
+            flipButton.className = 'flip-button';
+            flipButton.id = id;
+            flipButton.innerHTML = `
+                <div class="front">${index + 1}</div>
+                <div class="back">${answers[index] || 'N/A'}</div>
+            `;
+            flipButtonsContainer.appendChild(flipButton);
+        });
+    }
+
+    loadCSV();
+
+    document.getElementById("timeInput").addEventListener("input", function(e) {
+        let value = e.target.value.replace(/[^0-9:]/g, '');
+        if (value.length > 8) value = value.slice(0, 8);
+        let parts = value.split(':');
+        parts = parts.map(part => part.slice(0, 2));
+        e.target.value = parts.join(':');
+    });
+
+    // Add event listener for Enter key
+    document.getElementById("timeInput").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            setCustomTime();
+        }
+    });
+
+    function updateTimerDisplay() {
+        let min = String(minutes).padStart(2, '0');
+        let sec = String(seconds).padStart(2, '0');
+        let ms = String(milliseconds).padStart(2, '0');
+        timerDisplay.innerText = `Time: ${min}:${sec}:${ms}`;
+    }
+
+    function setCustomTime() {
+        const timeInput = document.getElementById("timeInput").value;
+        const timePattern = /^\d{1,2}:\d{1,2}:\d{1,2}$/;
+        if (!timePattern.test(timeInput)) {
+            alert("Invalid time format. Use mm:ss:ms with 1 or 2 numbers only.");
+            return;
+        }
+        const timeParts = timeInput.split(":");
+        minutes = parseInt(timeParts[0]);
+        seconds = parseInt(timeParts[1]);
+        milliseconds = parseInt(timeParts[2]);
+        timeSet = true; // Time has been successfully set
+        updateTimerDisplay();
+        timeUp = false;
+
+        document.getElementById("timeInput").value = ""; // Clear the input field after setting time
+    }
+
+    function startTimer() {
+        if (!timerStarted) {
+            timerStarted = true;
+            timerInterval = setInterval(() => {
+                if (milliseconds === 0) {
+                    if (seconds === 0) {
+                        if (minutes === 0) {
+                            clearInterval(timerInterval);
+                            timeUp = true;
+                            document.querySelectorAll(".flip-button").forEach(button => {
+                                if (!button.classList.contains("flipped")) {
+                                    button.querySelector(".back").style.border = "5px solid red";
+                                }
+                            });
+                            timerDisplay.innerText = "Time's up!";
+                            timerStarted = false;
+                            return;
+                        } else {
+                            minutes = 59;
+                            seconds = 59;
+                            milliseconds = 99;
+                        }
+                    } else {
+                        seconds--;
+                        milliseconds = 99;
+                    }
+                } else {
+                    milliseconds--;
+                }
+                updateTimerDisplay();
+            }, 10);
+        }
+    }
+
+    function restartTimer() {
+        clearInterval(timerInterval); 
+        timerStarted = false;
+
+        if (!timeSet) return; // Prevent alert if no time is set when pressing R
+
+        updateTimerDisplay();
+        document.querySelectorAll(".flip-button").forEach(button => {
+            button.querySelector(".back").style.border = "5px solid green";
+            button.classList.remove("flipped");
+        });
+    }
+
+    document.addEventListener("keydown", function (event) {
+        if (document.activeElement.id !== "timeInput") {
+            if (event.key === "l" || event.key === "L") {
+                startTimer();
+            } else if (event.key === "r" || event.key === "R") {
+                restartTimer();
+            } else if (event.key >= "1" && event.key <= "5") {
+                let button = document.getElementById(`flipButton${event.key}`);
+                if (button && !button.classList.contains("flipped")) {
+                    button.classList.add("flipped");
+                    let backSide = button.querySelector(".back");
+                    backSide.style.border = timeUp ? "5px solid red" : "5px solid green";
+                }
+            }
+        }
+    });
+
+    function restartTimer() {
+        clearInterval(timerInterval);
+        timerStarted = false;
+        if (!timeSet) return;
+        updateTimerDisplay();
+        document.querySelectorAll(".flip-button").forEach(button => {
+            button.querySelector(".back").style.border = "5px solid green";
+            button.classList.remove("flipped");
+        });
+    }
+
+    updateTimerDisplay();
+
+    </script>
+</body>
+</html>
